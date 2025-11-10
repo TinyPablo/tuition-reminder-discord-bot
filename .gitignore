@@ -1,0 +1,16 @@
+# === Python build/cache files ===
+__pycache__/
+*.pyc
+
+# === Virtual environments ===
+.venv/
+env/
+
+# === Local configuration ===
+.env
+payment_config.json
+data/
+
+# === IDE/editor files ===
+.vscode/
+.idea/
