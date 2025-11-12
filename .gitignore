@@ -14,3 +14,6 @@ data/
 # === IDE/editor files ===
 .vscode/
 .idea/
+
+# === OS junk files ===
+.DS_Store

@@ -1,14 +1,38 @@
 MESSAGES_PL = {
-    "week_left": (
+    # ===== AUTOMATED PAYMENT REMINDERS =====
+    "reminder_week_before_due": (
         "@everyone 📅 {date}: Zbliża się termin płatności ({amount} zł). "
         "Został tydzień do końca miesiąca — jeśli jeszcze nie zapłaciłeś, przygotuj przelew."
     ),
-    "day_left": (
+
+    "reminder_day_before_due": (
         "@everyone ⚠️ {date}: Ostatni dzień na zwykły przelew ({amount} zł). "
-        "Od jutra zostaje tylko przelew natychmiastowy."
+        "Od jutra dostępny będzie już tylko przelew natychmiastowy."
     ),
-    "due_today": (
-        "@everyone 🚨 {date}: Termin płatności dziś ({amount} zł). "
-        "Jeśli jeszcze nie zrobiłeś przelewu, zrób go jako *instant*."
+
+    "reminder_due_today": (
+        "@everyone 🚨 {date}: Termin płatności przypada dziś ({amount} zł). "
+        "Jeśli jeszcze nie zrobiłeś przelewu, wykonaj go jako *instant*."
     ),
+
+    # ===== BROADCAST MESSAGES (sent publicly when admin updates config) =====
+    "broadcast_normal_payment_changed": (
+        "@everyone 🔧 Zmieniono kwotę płatności dla miesięcy zwykłych na **{value} zł**."
+    ),
+
+    "broadcast_holiday_payment_changed": (
+        "@everyone 🔧 Zmieniono kwotę płatności dla miesięcy wakacyjnych na **{value} zł**."
+    ),
+
+    # ===== USER CONFIRMATION MESSAGES (ephemeral, visible only to user) =====
+    "confirm_normal_payment_updated": (
+        "✅ Kwota płatności dla miesięcy zwykłych została zaktualizowana do **{value} zł**."
+    ),
+
+    "confirm_holiday_payment_updated": (
+        "✅ Kwota płatności dla miesięcy wakacyjnych została zaktualizowana do **{value} zł**."
+    ),
+
+    # ===== SYSTEM / INTERNAL MESSAGES =====
+    "system_config_saved": "✅ Zapisano konfigurację."
 }

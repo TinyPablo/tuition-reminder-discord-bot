@@ -1,14 +1,34 @@
 import discord
 from discord.ext import commands, tasks
 import calendar
+import json
+import os
 
 from datetime import datetime, timedelta
 from bot.messages import MESSAGES_PL as MESSAGES
 from bot.config import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME
 
 
-def get_payment_amount(month: int) -> int:
-    return 350 if month in (7, 8) else 650
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "payment_config.json")
+
+
+def load_config():
+    if not os.path.exists(CONFIG_FILE):
+        data = {"normal": 650, "holiday": 350}
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(data, f)
+        return data
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
+
+
+def save_config(data):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def get_payment_amount(month: int, config: dict) -> int:
+    return config["holiday"] if month in (7, 8) else config["normal"]
 
 
 def get_next_date(current_date: datetime) -> datetime:
@@ -25,10 +45,14 @@ def run_bot():
     intents = discord.Intents.default()
     bot = commands.Bot(command_prefix="!", intents=intents)
     current_date = datetime(2025, 1, 20)
+    config = load_config()
 
     @bot.event
     async def on_ready():
-        print(f"Logged in as {bot.user}")
+        guild_obj = discord.Object(id=GUILD_ID)
+        await bot.tree.sync(guild=guild_obj)
+        print(f"[INFO] Synced commands to guild {GUILD_ID}")
+        print(f"[INFO] Logged in as {bot.user}")
         simulate_days.start()
 
     async def get_or_create_channel(guild: discord.Guild, name: str) -> discord.TextChannel:
@@ -36,6 +60,51 @@ def run_bot():
         if not ch:
             ch = await guild.create_text_channel(name)
         return ch
+
+
+    @bot.tree.command(
+        name="set_normal",
+        description="Set the normal (non-holiday) monthly payment amount",
+        guild=discord.Object(id=GUILD_ID),
+    )
+    async def set_normal(interaction: discord.Interaction, value: int):
+        config["normal"] = value
+        save_config(config)
+
+        await interaction.response.send_message(
+            MESSAGES["confirm_normal_payment_updated"].format(value=value),
+            ephemeral=True
+        )
+
+        channel = await get_or_create_channel(interaction.guild, CHANNEL_NAME)
+        await channel.send(
+            MESSAGES["broadcast_normal_payment_changed"].format(
+                value=value
+            )
+        )
+
+
+    @bot.tree.command(
+        name="set_holiday",
+        description="Set the holiday (July/August) monthly payment amount",
+        guild=discord.Object(id=GUILD_ID),
+    )
+    async def set_holiday(interaction: discord.Interaction, value: int):
+        config["holiday"] = value
+        save_config(config)
+
+        await interaction.response.send_message(
+            MESSAGES["confirm_holiday_payment_updated"].format(value=value),
+            ephemeral=True
+        )
+
+        channel = await get_or_create_channel(interaction.guild, CHANNEL_NAME)
+        await channel.send(
+            MESSAGES["broadcast_holiday_payment_changed"].format(
+                value=value
+            )
+        )
+    
 
     @tasks.loop(seconds=1)
     async def simulate_days():
@@ -47,15 +116,15 @@ def run_bot():
         channel = await get_or_create_channel(guild, CHANNEL_NAME)
         last_day = calendar.monthrange(current_date.year, current_date.month)[1]
         days_left = last_day - current_date.day
-        amount = get_payment_amount(current_date.month)
+        amount = get_payment_amount(current_date.month, config)
         date_str = current_date.strftime("%Y-%m-%d")
 
         if days_left == 7:
-            msg = MESSAGES["week_left"].format(date=date_str, amount=amount)
+            msg = MESSAGES["reminder_week_before_due"].format(date=date_str, amount=amount)
         elif days_left == 1:
-            msg = MESSAGES["day_left"].format(date=date_str, amount=amount)
+            msg = MESSAGES["reminder_day_before_due"].format(date=date_str, amount=amount)
         elif days_left == 0:
-            msg = MESSAGES["due_today"].format(date=date_str, amount=amount)
+            msg = MESSAGES["reminder_due_today"].format(date=date_str, amount=amount)
         else:
             msg = None
 
