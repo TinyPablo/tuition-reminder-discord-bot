@@ -1,15 +1,21 @@
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
 import calendar
 import json
 import os
 
 from datetime import datetime, timedelta
 from bot.messages import MESSAGES_PL as MESSAGES
-from bot.config import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME
+from bot.config import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, MANAGER_ROLE_ID
 
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "payment_config.json")
+
+def manager_only():
+    async def predicate(interaction: discord.Interaction):
+        return any(r.id == MANAGER_ROLE_ID for r in interaction.user.roles)
+    return app_commands.check(predicate)
 
 
 def load_config():
@@ -54,6 +60,19 @@ def run_bot():
         print(f"[INFO] Synced commands to guild {GUILD_ID}")
         print(f"[INFO] Logged in as {bot.user}")
         simulate_days.start()
+        
+        
+    @bot.tree.error
+    async def on_app_command_error(interaction: discord.Interaction, error):
+        from discord.app_commands import CheckFailure
+
+        if isinstance(error, CheckFailure):
+            await interaction.response.send_message(
+                MESSAGES["error_missing_manager_role"].format(role_id=MANAGER_ROLE_ID),
+                ephemeral=True
+            )
+            return
+
 
     async def get_or_create_channel(guild: discord.Guild, name: str) -> discord.TextChannel:
         ch = discord.utils.get(guild.text_channels, name=name)
@@ -67,6 +86,7 @@ def run_bot():
         description="Set the normal (non-holiday) monthly payment amount",
         guild=discord.Object(id=GUILD_ID),
     )
+    @manager_only()
     async def set_normal(interaction: discord.Interaction, value: int):
         config["normal"] = value
         save_config(config)
@@ -89,6 +109,7 @@ def run_bot():
         description="Set the holiday (July/August) monthly payment amount",
         guild=discord.Object(id=GUILD_ID),
     )
+    @manager_only()
     async def set_holiday(interaction: discord.Interaction, value: int):
         config["holiday"] = value
         save_config(config)
