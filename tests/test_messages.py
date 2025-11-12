@@ -36,5 +36,4 @@ def test_message_placeholders():
             assert "{value}" in text
 
         elif key in SYSTEM_KEYS:
-            # no placeholders required
-            assert "{" not in text  # system message should contain no formatting placeholders
+            assert "{" not in text 

@@ -12,6 +12,17 @@ from bot.config import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, MANAGER_ROLE_ID
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "payment_config.json")
 
+
+def select_reminder_message(days_left: int, date_str: str, amount: int, messages: dict) -> str | None:
+        if days_left == 7:
+            return messages["reminder_week_before_due"].format(date=date_str, amount=amount)
+        elif days_left == 1:
+            return messages["reminder_day_before_due"].format(date=date_str, amount=amount)
+        elif days_left == 0:
+            return messages["reminder_due_today"].format(date=date_str, amount=amount)
+        return None
+
+
 def manager_only():
     async def predicate(interaction: discord.Interaction):
         return any(r.id == MANAGER_ROLE_ID for r in interaction.user.roles)
@@ -125,7 +136,7 @@ def run_bot():
                 value=value
             )
         )
-    
+       
 
     @tasks.loop(seconds=1)
     async def simulate_days():
@@ -140,14 +151,7 @@ def run_bot():
         amount = get_payment_amount(current_date.month, config)
         date_str = current_date.strftime("%Y-%m-%d")
 
-        if days_left == 7:
-            msg = MESSAGES["reminder_week_before_due"].format(date=date_str, amount=amount)
-        elif days_left == 1:
-            msg = MESSAGES["reminder_day_before_due"].format(date=date_str, amount=amount)
-        elif days_left == 0:
-            msg = MESSAGES["reminder_due_today"].format(date=date_str, amount=amount)
-        else:
-            msg = None
+        msg = select_reminder_message(days_left, date_str, amount, MESSAGES)
 
         if msg:
             await channel.send(msg)
