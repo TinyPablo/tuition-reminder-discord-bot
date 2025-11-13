@@ -1,51 +1,43 @@
 MESSAGES_PL = {
     "reminders": {
         "week_before_due": (
-            "@everyone 📅 {date}: Zbliża się termin płatności ({amount} zł). "
-            "Został tydzień do końca miesiąca — jeśli jeszcze nie zapłaciłeś, przygotuj przelew."
+            "@everyone {date} 📅 Przypomnienie — jeśli jeszcze nie zrobiłeś przelewu ({amount} zł), ogarnij to w wolnej chwili."
         ),
         "day_before_due": (
-            "@everyone ⚠️ {date}: Ostatni dzień na zwykły przelew ({amount} zł). "
-            "Od jutra dostępny będzie już tylko przelew natychmiastowy."
+            "@everyone {date} ⚠️ Przypomnienie — jeśli jeszcze nie zapłaciłeś czesnego ({amount} zł) i chcesz zaoszczędzić piątaka, przelej dziś kasę."
         ),
         "due_today": (
-            "@everyone 🚨 {date}: Termin płatności przypada dziś ({amount} zł). "
-            "Jeśli jeszcze nie zrobiłeś przelewu, wykonaj go jako *instant*."
+            "@everyone {date} 🚨 Przypomnienie — jeżeli jeszcze nie przelałeś, to przelewaj kasę teraz przelewem natychmiastowym ({amount} zł), bo dziś termin. Jak to odłożysz, możesz mieć potem problemy."
         ),
     },
 
     "broadcasts": {
         "normal_payment_changed": (
-            "@everyone 🔧 Zmieniono kwotę płatności dla miesięcy zwykłych na **{value} zł**."
+            "@everyone ℹ️ Info — czesne za zwykłe miesiące zmienione na **{value} zł**."
         ),
         "holiday_payment_changed": (
-            "@everyone 🔧 Zmieniono kwotę płatności dla miesięcy wakacyjnych na **{value} zł**."
+            "@everyone ℹ️ Info — czesne za wakacyjne miesiące zmienione na **{value} zł**."
         ),
     },
 
     "confirmations": {
         "normal_payment_updated": (
-            "✅ Kwota płatności dla miesięcy zwykłych została zaktualizowana do **{value} zł**."
+            "✅ Aktualizacja — kwota na zwykłe miesiące ustawiona na **{value} zł**."
         ),
         "holiday_payment_updated": (
-            "✅ Kwota płatności dla miesięcy wakacyjnych została zaktualizowana do **{value} zł**."
+            "✅ Aktualizacja — kwota na wakacyjne miesiące ustawiona na **{value} zł**."
         ),
     },
 
     "errors": {
         "missing_manager_role": (
-            "❌ Nie masz uprawnień do wykonania tej komendy. "
-            "Wymagana rola: <@&{role_id}>."
+            "❌ Błąd — nie masz uprawnień do tej komendy. Wymagana rola: <@&{role_id}>."
         ),
-        "amount_must_be_positive": (
-            "❌ Podana kwota musi być większa niż 0."
-        ),
-        "amount_same_as_current": (
-            "❌ Nowa kwota jest taka sama jak obecna ({current} zł)."
-        ),
+        "amount_must_be_positive": "❌ Błąd — kwota musi być większa niż 0.",
+        "amount_same_as_current": "❌ Błąd — nowa kwota jest taka sama jak obecna ({current} zł).",
     },
 
     "system": {
-        "config_saved": "✅ Zapisano konfigurację."
+        "config_saved": "✅ Konfiguracja zapisana — gotowe."
     }
 }
