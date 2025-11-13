@@ -154,6 +154,27 @@ def run_bot():
         await channel.send(
             MESSAGES["broadcast_holiday_payment_changed"].format(value=value)
         )
+        
+        
+    @bot.tree.command(
+        name="debug_status",
+        description="Show internal bot debug info (manager only).",
+        guild=discord.Object(id=GUILD_ID),
+    )
+    @manager_only()
+    async def debug_status(interaction: discord.Interaction):
+        debug_info = (
+            f"**[DEBUG STATUS]**\n"
+            f"- Current simulated date: `{current_date.strftime('%Y-%m-%d')}`\n"
+            f"- Normal payment: `{config['normal']} zł`\n"
+            f"- Holiday payment: `{config['holiday']} zł`\n"
+            f"- Config file path: `{CONFIG_FILE}`\n"
+            f"- Next simulated date: `{get_next_date(current_date).strftime('%Y-%m-%d')}`\n"
+            f"- Channel name: `{CHANNEL_NAME}`\n"
+            f"- Guild ID: `{GUILD_ID}`\n"
+        )
+
+        await interaction.response.send_message(debug_info, ephemeral=True)
        
 
     @tasks.loop(seconds=1)
