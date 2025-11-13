@@ -7,7 +7,7 @@ import os
 
 from datetime import datetime, timedelta
 from bot.messages import MESSAGES_PL as MESSAGES
-from bot.config import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, MANAGER_ROLE_ID
+from bot.config import CATEGORY_NAME, DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, MANAGER_ROLE_ID
 
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "payment_config.json")
@@ -24,13 +24,13 @@ def validate_amount(new_value: int, current_value: int) -> tuple[bool, str | Non
 
 
 def select_reminder_message(days_left: int, date_str: str, amount: int, messages: dict) -> str | None:
-        if days_left == 7:
-            return messages["reminder_week_before_due"].format(date=date_str, amount=amount)
-        elif days_left == 1:
-            return messages["reminder_day_before_due"].format(date=date_str, amount=amount)
-        elif days_left == 0:
-            return messages["reminder_due_today"].format(date=date_str, amount=amount)
-        return None
+    if days_left == 7:
+        return messages["reminder_week_before_due"].format(date=date_str, amount=amount)
+    elif days_left == 1:
+        return messages["reminder_day_before_due"].format(date=date_str, amount=amount)
+    elif days_left == 0:
+        return messages["reminder_due_today"].format(date=date_str, amount=amount)
+    return None
 
 
 def manager_only():
@@ -95,11 +95,28 @@ def run_bot():
             return
 
 
+    async def get_or_create_category(guild: discord.Guild, name: str) -> discord.CategoryChannel:
+        category = discord.utils.get(guild.categories, name=name)
+        if not category:
+            category = await guild.create_category(name)
+            # await category.edit(position=len(guild.categories) - 1)
+        return category
+
+    
     async def get_or_create_channel(guild: discord.Guild, name: str) -> discord.TextChannel:
-        ch = discord.utils.get(guild.text_channels, name=name)
-        if not ch:
-            ch = await guild.create_text_channel(name)
-        return ch
+        category = await get_or_create_category(guild, CATEGORY_NAME)
+
+        channel = discord.utils.get(category.channels, name=name)
+        if channel:
+            return channel
+
+        existing = discord.utils.get(guild.text_channels, name=name)
+        if existing and existing.category is None:
+            await existing.edit(category=category)
+            return existing
+
+        channel = await category.create_text_channel(name)
+        return channel
 
 
     @bot.tree.command(
@@ -158,23 +175,50 @@ def run_bot():
         
     @bot.tree.command(
         name="debug_status",
-        description="Show internal bot debug info (manager only).",
-        guild=discord.Object(id=GUILD_ID),
+        description="Show internal bot debug information (manager only).",
+        guild=discord.Object(id=GUILD_ID)
     )
     @manager_only()
     async def debug_status(interaction: discord.Interaction):
-        debug_info = (
-            f"**[DEBUG STATUS]**\n"
-            f"- Current simulated date: `{current_date.strftime('%Y-%m-%d')}`\n"
-            f"- Normal payment: `{config['normal']} zł`\n"
-            f"- Holiday payment: `{config['holiday']} zł`\n"
-            f"- Config file path: `{CONFIG_FILE}`\n"
-            f"- Next simulated date: `{get_next_date(current_date).strftime('%Y-%m-%d')}`\n"
-            f"- Channel name: `{CHANNEL_NAME}`\n"
-            f"- Guild ID: `{GUILD_ID}`\n"
+        guild = interaction.guild
+
+        category = discord.utils.get(guild.categories, name=CATEGORY_NAME)
+
+        channel = discord.utils.get(guild.text_channels, name=CHANNEL_NAME)
+
+        normal = config.get("normal")
+        holiday = config.get("holiday")
+
+        has_role = any(r.id == MANAGER_ROLE_ID for r in interaction.user.roles)
+
+        msg = (
+            "### 🧩 Debug — Tuition Reminder Bot\n"
+            f"**Guild ID:** `{GUILD_ID}`\n\n"
+
+            "#### 💰 Payment configuration\n"
+            f"- Normal payment: **{normal} zł**\n"
+            f"- Holiday payment: **{holiday} zł**\n\n"
+
+            "#### 📁 Category\n"
+            f"- Name: **{CATEGORY_NAME}**\n"
+            f"- Exists: **{category is not None}**\n"
+            f"- ID: `{category.id if category else 'N/A'}`\n\n"
+
+            "#### 💬 Channel\n"
+            f"- Name: **{CHANNEL_NAME}**\n"
+            f"- Exists: **{channel is not None}**\n"
+            f"- ID: `{channel.id if channel else 'N/A'}`\n"
+            f"- Category matched: **{channel.category.id == category.id if (channel and category) else 'N/A'}**\n\n"
+
+            "#### 🔐 Role\n"
+            f"- Manager role ID: `{MANAGER_ROLE_ID}`\n"
+            f"- User has role: **{has_role}**\n\n"
+
+            "#### 🗂 Config file\n"
+            f"- Path: `{CONFIG_FILE}`\n"
         )
 
-        await interaction.response.send_message(debug_info, ephemeral=True)
+        await interaction.response.send_message(msg, ephemeral=True)
        
 
     @tasks.loop(seconds=1)
