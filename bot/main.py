@@ -1,16 +1,17 @@
+import calendar
+from datetime import datetime, timedelta
+
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-import calendar
-import json
-import os
 
-from datetime import datetime, timedelta
 from bot.messages import MESSAGES_PL as MESSAGES
-from bot.config import CATEGORY_NAME, DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, MANAGER_ROLE_ID
 
+from bot.settings.discord_settings import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, CATEGORY_NAME, MANAGER_ROLE_ID
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "payment_config.json")
+from bot.settings.payment_settings import load_payment_config, save_payment_config
+
+from bot.settings.paths import PAYMENT_CONFIG_FILE
 
 
 def validate_amount(new_value: int, current_value: int):
@@ -43,21 +44,6 @@ def manager_only():
     return app_commands.check(predicate)
 
 
-def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        data = {"normal": 650, "holiday": 350}
-        with open(CONFIG_FILE, "w") as f:
-            json.dump(data, f)
-        return data
-    with open(CONFIG_FILE, "r") as f:
-        return json.load(f)
-
-
-def save_config(data):
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(data, f, indent=2)
-
-
 def get_payment_amount(month: int, config: dict) -> int:
     return config["holiday"] if month in (7, 8) else config["normal"]
 
@@ -76,7 +62,7 @@ def run_bot():
     intents = discord.Intents.default()
     bot = commands.Bot(command_prefix="!", intents=intents)
     current_date = datetime(2025, 1, 20)
-    config = load_config()
+    config = load_payment_config()
 
     @bot.event
     async def on_ready():
@@ -137,7 +123,7 @@ def run_bot():
             return
 
         config["normal"] = value
-        save_config(config)
+        save_payment_config(config)
 
         await interaction.response.send_message(
             MESSAGES["confirmations"]["normal_payment_updated"].format(value=value),
@@ -164,7 +150,7 @@ def run_bot():
             return
 
         config["holiday"] = value
-        save_config(config)
+        save_payment_config(config)
 
         await interaction.response.send_message(
             MESSAGES["confirmations"]["holiday_payment_updated"].format(value=value),
@@ -219,7 +205,7 @@ def run_bot():
             f"- User has role: **{has_role}**\n\n"
 
             "#### 🗂 Config file\n"
-            f"- Path: `{CONFIG_FILE}`\n"
+            f"- Path: `{PAYMENT_CONFIG_FILE}`\n"
         )
 
         await interaction.response.send_message(msg, ephemeral=True)
