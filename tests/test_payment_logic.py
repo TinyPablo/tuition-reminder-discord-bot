@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from bot.main import get_payment_amount, get_next_date
+from bot.main import get_payment_amount, get_next_date, validate_amount
 
 
 def test_payment_amounts():
@@ -32,3 +32,27 @@ def test_next_date_rollover_december():
     assert result.year == 2026
     assert result.month == 1
     assert result.day == 1
+    
+    
+def test_validate_amount_positive_change():
+    ok, msg = validate_amount(700, 650)
+    assert ok is True
+    assert msg is None
+
+
+def test_validate_amount_zero():
+    ok, msg = validate_amount(0, 650)
+    assert ok is False
+    assert "musi być większa niż 0" in msg
+
+
+def test_validate_amount_negative():
+    ok, msg = validate_amount(-50, 650)
+    assert ok is False
+    assert "musi być większa niż 0" in msg
+
+
+def test_validate_amount_same_value():
+    ok, msg = validate_amount(650, 650)
+    assert ok is False
+    assert "taka sama jak obecna" in msg

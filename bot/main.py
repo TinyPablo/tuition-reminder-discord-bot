@@ -13,6 +13,16 @@ from bot.config import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, MANAGER_ROLE_ID
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "payment_config.json")
 
 
+def validate_amount(new_value: int, current_value: int) -> tuple[bool, str | None]:
+    if new_value <= 0:
+        return False, MESSAGES["error_amount_must_be_positive"]
+
+    if new_value == current_value:
+        return False, MESSAGES["error_amount_same_as_current"].format(current=current_value)
+
+    return True, None
+
+
 def select_reminder_message(days_left: int, date_str: str, amount: int, messages: dict) -> str | None:
         if days_left == 7:
             return messages["reminder_week_before_due"].format(date=date_str, amount=amount)
@@ -99,6 +109,12 @@ def run_bot():
     )
     @manager_only()
     async def set_normal(interaction: discord.Interaction, value: int):
+        is_valid, error_message = validate_amount(value, config["normal"])
+
+        if not is_valid:
+            await interaction.response.send_message(error_message, ephemeral=True)
+            return
+
         config["normal"] = value
         save_config(config)
 
@@ -109,9 +125,7 @@ def run_bot():
 
         channel = await get_or_create_channel(interaction.guild, CHANNEL_NAME)
         await channel.send(
-            MESSAGES["broadcast_normal_payment_changed"].format(
-                value=value
-            )
+            MESSAGES["broadcast_normal_payment_changed"].format(value=value)
         )
 
 
@@ -122,6 +136,12 @@ def run_bot():
     )
     @manager_only()
     async def set_holiday(interaction: discord.Interaction, value: int):
+        is_valid, error_message = validate_amount(value, config["holiday"])
+
+        if not is_valid:
+            await interaction.response.send_message(error_message, ephemeral=True)
+            return
+
         config["holiday"] = value
         save_config(config)
 
@@ -132,9 +152,7 @@ def run_bot():
 
         channel = await get_or_create_channel(interaction.guild, CHANNEL_NAME)
         await channel.send(
-            MESSAGES["broadcast_holiday_payment_changed"].format(
-                value=value
-            )
+            MESSAGES["broadcast_holiday_payment_changed"].format(value=value)
         )
        
 

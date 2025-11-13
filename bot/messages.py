@@ -38,5 +38,14 @@ MESSAGES_PL = {
     ),
 
     # ===== SYSTEM / INTERNAL MESSAGES =====
-    "system_config_saved": "✅ Zapisano konfigurację."
+    "system_config_saved": "✅ Zapisano konfigurację.",
+    
+    # ===== VALIDATION ERRORS =====
+    "error_amount_must_be_positive": (
+        "❌ Podana kwota musi być większa niż 0."
+    ),
+
+    "error_amount_same_as_current": (
+        "❌ Nowa kwota jest taka sama jak obecna ({current} zł)."
+    ),
 }
