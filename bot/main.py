@@ -13,23 +13,27 @@ from bot.config import CATEGORY_NAME, DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME, MAN
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "payment_config.json")
 
 
-def validate_amount(new_value: int, current_value: int) -> tuple[bool, str | None]:
+def validate_amount(new_value: int, current_value: int):
+    errs = MESSAGES["errors"]
+
     if new_value <= 0:
-        return False, MESSAGES["error_amount_must_be_positive"]
+        return False, errs["amount_must_be_positive"]
 
     if new_value == current_value:
-        return False, MESSAGES["error_amount_same_as_current"].format(current=current_value)
+        return False, errs["amount_same_as_current"].format(current=current_value)
 
     return True, None
 
 
-def select_reminder_message(days_left: int, date_str: str, amount: int, messages: dict) -> str | None:
+def select_reminder_message(days_left: int, date_str: str, amount: int, messages: dict):
+    r = messages["reminders"]
+
     if days_left == 7:
-        return messages["reminder_week_before_due"].format(date=date_str, amount=amount)
-    elif days_left == 1:
-        return messages["reminder_day_before_due"].format(date=date_str, amount=amount)
-    elif days_left == 0:
-        return messages["reminder_due_today"].format(date=date_str, amount=amount)
+        return r["week_before_due"].format(date=date_str, amount=amount)
+    if days_left == 1:
+        return r["day_before_due"].format(date=date_str, amount=amount)
+    if days_left == 0:
+        return r["due_today"].format(date=date_str, amount=amount)
     return None
 
 
@@ -89,7 +93,7 @@ def run_bot():
 
         if isinstance(error, CheckFailure):
             await interaction.response.send_message(
-                MESSAGES["error_missing_manager_role"].format(role_id=MANAGER_ROLE_ID),
+                MESSAGES["errors"]["missing_manager_role"].format(role_id=MANAGER_ROLE_ID),
                 ephemeral=True
             )
             return
@@ -136,13 +140,13 @@ def run_bot():
         save_config(config)
 
         await interaction.response.send_message(
-            MESSAGES["confirm_normal_payment_updated"].format(value=value),
+            MESSAGES["confirmations"]["normal_payment_updated"].format(value=value),
             ephemeral=True
         )
 
         channel = await get_or_create_channel(interaction.guild, CHANNEL_NAME)
         await channel.send(
-            MESSAGES["broadcast_normal_payment_changed"].format(value=value)
+            MESSAGES["broadcasts"]["normal_payment_changed"].format(value=value)
         )
 
 
