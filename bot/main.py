@@ -124,7 +124,7 @@ def run_bot():
 
 
     @bot.tree.command(
-        name="set_normal",
+        name="set_normal", 
         description="Set the normal (non-holiday) monthly payment amount",
         guild=discord.Object(id=GUILD_ID),
     )
@@ -167,13 +167,13 @@ def run_bot():
         save_config(config)
 
         await interaction.response.send_message(
-            MESSAGES["confirm_holiday_payment_updated"].format(value=value),
+            MESSAGES["confirmations"]["holiday_payment_updated"].format(value=value),
             ephemeral=True
         )
 
         channel = await get_or_create_channel(interaction.guild, CHANNEL_NAME)
         await channel.send(
-            MESSAGES["broadcast_holiday_payment_changed"].format(value=value)
+            MESSAGES["broadcasts"]["holiday_payment_changed"].format(value=value)
         )
         
         
