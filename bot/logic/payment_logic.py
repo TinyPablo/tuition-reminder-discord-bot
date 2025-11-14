@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import calendar
 
+from bot.settings.logging_settings import logger
 from bot.messages import MESSAGES_PL as MESSAGES
 
 
@@ -8,11 +9,17 @@ def validate_amount(new_value: int, current_value: int):
     errs = MESSAGES["errors"]
 
     if new_value <= 0:
+        logger.debug("Validation failed: non-positive amount (%s)", new_value)
         return False, errs["amount_must_be_positive"]
 
     if new_value == current_value:
+        logger.debug(
+            "Validation failed: new amount equal to current (%s)",
+            current_value
+        )
         return False, errs["amount_same_as_current"].format(current=current_value)
 
+    logger.debug("Validation passed: %s -> %s", current_value, new_value)
     return True, None
 
 

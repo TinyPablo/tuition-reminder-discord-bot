@@ -17,3 +17,6 @@ data/
 
 # === OS junk files ===
 .DS_Store
+
+# === Log files ===
+logs/

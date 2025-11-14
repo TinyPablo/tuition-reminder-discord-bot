@@ -10,6 +10,7 @@ from bot.settings.discord_settings import DISCORD_TOKEN, GUILD_ID, CHANNEL_NAME,
 
 from bot.settings.payment_settings import load_payment_config, save_payment_config
 from bot.settings.paths import PAYMENT_CONFIG_FILE
+from bot.settings.logging_settings import logger
 
 from bot.logic.payment_logic import validate_amount, select_reminder_message, get_payment_amount, get_next_date
 
@@ -26,8 +27,8 @@ def run_bot():
     async def on_ready():
         guild_obj = discord.Object(id=GUILD_ID)
         await bot.tree.sync(guild=guild_obj)
-        print(f"[INFO] Synced commands to guild {GUILD_ID}")
-        print(f"[INFO] Logged in as {bot.user}")
+        logger.info("Synced application commands to guild %s", GUILD_ID)
+        logger.info("Logged in as %s", bot.user)
         simulate_days.start()
         
         
@@ -36,11 +37,17 @@ def run_bot():
         from discord.app_commands import CheckFailure
 
         if isinstance(error, CheckFailure):
+            logger.warning(
+                "User %s tried to use a manager-only command without role %s",
+                interaction.user, MANAGER_ROLE_ID
+            )
             await interaction.response.send_message(
                 MESSAGES["errors"]["missing_manager_role"].format(role_id=MANAGER_ROLE_ID),
                 ephemeral=True
             )
             return
+
+        logger.error("Unhandled app command error: %r", error)
 
 
     async def get_or_create_category(guild: discord.Guild, name: str) -> discord.CategoryChannel:
@@ -77,11 +84,20 @@ def run_bot():
         is_valid, error_message = validate_amount(value, config["normal"])
 
         if not is_valid:
+            logger.info(
+                "Rejected normal payment update from %s: %s (current=%s)",
+                interaction.user, value, config["normal"]
+            )
             await interaction.response.send_message(error_message, ephemeral=True)
             return
 
+        old_value = config["normal"]
         config["normal"] = value
         save_payment_config(config)
+        logger.info(
+            "Normal payment changed from %s to %s by %s",
+            old_value, value, interaction.user
+        )
 
         await interaction.response.send_message(
             MESSAGES["confirmations"]["normal_payment_updated"].format(value=value),
@@ -104,11 +120,20 @@ def run_bot():
         is_valid, error_message = validate_amount(value, config["holiday"])
 
         if not is_valid:
+            logger.info(
+                "Rejected holiday payment update from %s: %s (current=%s)",
+                interaction.user, value, config["holiday"]
+            )
             await interaction.response.send_message(error_message, ephemeral=True)
             return
 
+        old_value = config["holiday"]
         config["holiday"] = value
         save_payment_config(config)
+        logger.info(
+            "Holiday payment changed from %s to %s by %s",
+            old_value, value, interaction.user
+        )
 
         await interaction.response.send_message(
             MESSAGES["confirmations"]["holiday_payment_updated"].format(value=value),
@@ -174,6 +199,7 @@ def run_bot():
         nonlocal current_date
         guild = bot.get_guild(GUILD_ID)
         if not guild:
+            logger.warning("simulate_days: guild %s not found", GUILD_ID)
             return
 
         channel = await get_or_create_channel(guild, CHANNEL_NAME)
@@ -185,10 +211,13 @@ def run_bot():
         msg = select_reminder_message(days_left, date_str, amount)
 
         if msg:
+            logger.info(
+                "Sending reminder for %s (days_left=%s, amount=%s) to channel %s",
+                date_str, days_left, amount, CHANNEL_NAME
+            )
             await channel.send(msg)
 
         current_date = get_next_date(current_date)
-
     bot.run(DISCORD_TOKEN)
 
 
